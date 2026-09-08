@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TFT 桌面挂件 · 开发手册（STM32F103C8T6 + ASRPRO）</title>
+<style>
+  :root{
+    --bg:#15171c; --panel:#1e2128; --panel2:#23262f; --border:#31353f;
+    --text:#d7dae0; --text-dim:#9aa0ab; --accent:#e05d5d; --accent2:#5da9e9;
+    --green:#6fbf8b; --yellow:#d9b25f; --code-bg:#12141a;
+    --mono:"Cascadia Code","JetBrains Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.75;font-size:15px;}
+  .wrap{display:flex;max-width:1280px;margin:0 auto;}
+  /* 侧边目录 */
+  nav{width:250px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:28px 14px;border-right:1px solid var(--border);background:var(--panel);}
+  nav .logo{font-weight:700;font-size:17px;margin-bottom:4px;}
+  nav .logo span{color:var(--accent);}
+  nav .sub{font-size:12px;color:var(--text-dim);margin-bottom:20px;}
+  nav a{display:block;color:var(--text-dim);text-decoration:none;font-size:13px;padding:5px 10px;border-radius:6px;margin-bottom:2px;}
+  nav a:hover{color:var(--text);background:var(--panel2);}
+  nav a.l2{padding-left:24px;font-size:12.5px;}
+  main{flex:1;min-width:0;padding:36px 48px 80px;}
+  h1{font-size:26px;margin-bottom:6px;}
+  h1 .tag{font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:2px 10px;vertical-align:middle;margin-left:10px;font-weight:400;}
+  .meta{color:var(--text-dim);font-size:13px;margin-bottom:28px;}
+  h2{font-size:21px;margin:44px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border);color:#fff;}
+  h2 .no{color:var(--accent);margin-right:8px;font-family:var(--mono);}
+  h3{font-size:16.5px;margin:26px 0 10px;color:var(--accent2);}
+  h4{font-size:14.5px;margin:18px 0 8px;color:var(--text);}
+  p{margin:8px 0;}
+  ul,ol{margin:8px 0 8px 24px;}
+  li{margin:4px 0;}
+  code{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:13px;color:#e8c07a;white-space:nowrap;}
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;margin:12px 0;}
+  pre code{background:none;border:none;padding:0;color:#c8ccd4;white-space:pre;font-size:12.8px;line-height:1.6;}
+  .c-kw{color:#c678dd;} .c-fn{color:#61afef;} .c-str{color:#98c379;} .c-num{color:#d19a66;} .c-cm{color:#5c6370;font-style:italic;} .c-type{color:#e5c07b;}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px;}
+  th{background:var(--panel2);color:#fff;text-align:left;padding:8px 12px;border:1px solid var(--border);font-weight:600;}
+  td{padding:7px 12px;border:1px solid var(--border);color:var(--text);}
+  tr:nth-child(even) td{background:rgba(255,255,255,0.02);}
+  .tip,.warn,.info{border-radius:8px;padding:12px 16px;margin:14px 0;font-size:14px;}
+  .tip{background:rgba(111,191,139,0.1);border-left:4px solid var(--green);}
+  .warn{background:rgba(224,93,93,0.12);border-left:4px solid var(--accent);}
+  .info{background:rgba(93,169,233,0.1);border-left:4px solid var(--accent2);}
+  .tip b{color:var(--green);} .warn b{color:var(--accent);} .info b{color:var(--accent2);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+  .card h4{margin-top:0;color:var(--accent2);}
+  .flow{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin:14px 0;}
+  .flow .step{display:flex;align-items:flex-start;margin:10px 0;}
+  .flow .n{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;margin-right:12px;margin-top:2px;font-weight:700;}
+  .flow .n.blue{background:var(--accent2);} .flow .n.green{background:var(--green);}
+  .kbd{display:inline-block;border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:0 7px;font-family:var(--mono);font-size:12.5px;background:var(--panel2);}
+  .footer{margin-top:60px;padding-top:16px;border-top:1px solid var(--border);color:var(--text-dim);font-size:12.5px;text-align:center;}
+  .pill{display:inline-block;font-size:11.5px;border-radius:12px;padding:1px 10px;margin-left:8px;vertical-align:middle;}
+  .pill.red{background:rgba(224,93,93,.15);color:var(--accent);border:1px solid rgba(224,93,93,.4);}
+  .pill.blue{background:rgba(93,169,233,.15);color:var(--accent2);border:1px solid rgba(93,169,233,.4);}
+  .pill.green{background:rgba(111,191,139,.15);color:var(--green);border:1px solid rgba(111,191,139,.4);}
+  .pin{font-family:var(--mono);font-weight:700;color:var(--accent2);}
+  @media (max-width:900px){ nav{display:none;} main{padding:24px;} .grid2{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <div class="logo">TFT 桌面挂件 <span>❤</span></div>
+  <div class="sub">STM32F103C8T6 + ASRPRO<br>开发手册 v1.0</div>
+  <a href="#s1">1. 项目概述</a>
+  <a href="#s2">2. 系统架构</a>
+  <a href="#s3">3. 硬件设计</a>
+  <a href="#s3-1">3.2 引脚分配表</a>
+  <a href="#s3-2">3.3 接线表</a>
+  <a href="#s4">4. CubeMX 工程配置</a>
+  <a href="#s5">5. TFT 显示驱动开发</a>
+  <a href="#s5-1">5.2 ST7789 初始化</a>
+  <a href="#s5-2">5.3 基础绘图 API</a>
+  <a href="#s5-3">5.4 DMA 加速刷屏</a>
+  <a href="#s5-4">5.5 中文字模与图片</a>
+  <a href="#s6">6. ASRPRO 语音模块</a>
+  <a href="#s6-1">6.3 天问Block 编程</a>
+  <a href="#s7">7. 通信协议设计</a>
+  <a href="#s8">8. 应用层架构</a>
+  <a href="#s9">9. UI 界面设计</a>
+  <a href="#s10">10. 开发里程碑</a>
+  <a href="#s11">11. 常见问题 FAQ</a>
+  <a href="#s12">12. 进阶路线</a>
+</nav>
+<main>
+
+<h1>TFT 桌面显示挂件 · 开发手册 <span class="tag">v1.0</span></h1>
+<div class="meta">主控：STM32F103C8T6（72MHz / 64KB Flash / 20KB RAM）&nbsp;·&nbsp;显示：SPI TFT（ST7789 240×240）&nbsp;·&nbsp;语音：ASRPRO 离线语音识别&nbsp;·&nbsp;工具链：STM32CubeMX 6.17 + MDK-ARM V5.32 + HAL</div>
+
+<!-- ============ 1 ============ -->
+<h2 id="s1"><span class="no">01</span>项目概述</h2>
+<p>本项目制作一个<b>桌面智能显示挂件</b>：圆形/方形小尺寸 TFT 屏显示时钟、天气、表情等信息，通过 ASRPRO 离线语音模块实现语音唤醒与指令控制（如「切换表情」「现在几点」），整体封装为桌面摆件。</p>
+
+<div class="grid2">
+  <div class="card">
+    <h4>核心功能</h4>
+    <ul>
+      <li> TFT 显示：时钟表盘 / 像素表情 / 天气卡片多页面轮播</li>
+      <li> 语音交互：唤醒词 + 10 条左右离线指令</li>
+      <li> 语音反馈：ASRPRO 板载喇叭播报应答</li>
+      <li> SPI + DMA 高帧率刷屏（局部刷新 &gt;30fps）</li>
+      <li> 预留 USART2：可接 ESP8266/ESP-01 联网取天气</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>设计约束</h4>
+    <ul>
+      <li> RAM 仅 20KB → <b>禁止全屏帧缓冲</b>，必须用局部窗口刷新</li>
+      <li> Flash 64KB → 图片资源需取模压缩、按需存放</li>
+      <li> 挂件供电：USB 5V 输入，AMS1117-3.3 稳压</li>
+      <li> ASRPRO 为 3.3V 逻辑，与 STM32 直连，无需电平转换</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============ 2 ============ -->
+<h2 id="s2"><span class="no">02</span>系统架构</h2>
+<div class="flow">
+  <div class="step"><div class="n blue">A</div><div><b>ASRPRO 语音识别模块</b>（独立运行）— 麦克风拾音 → 离线识别唤醒词/命令词 → 板载喇叭播报 TTS 应答，同时通过 <b>UART</b> 把「指令码」发给 STM32。</div></div>
+  <div class="step"><div class="n">⇩</div><div style="color:var(--text-dim)">USART1 @115200，自定义帧协议（见第 7 章）</div></div>
+  <div class="step"><div class="n">B</div><div><b>STM32F103C8T6 主控</b> — 解析指令 → 更新 UI 状态机 → 通过 <b>SPI1 + DMA</b> 驱动 TFT 刷新画面。SysTick 1ms 节拍驱动软定时器，负责时钟走秒、页面轮播、动画帧。</div></div>
+  <div class="step"><div class="n">⇩</div><div style="color:var(--text-dim)">SPI1（PA5/PA6/PA7）+ GPIO 控制脚（CS/DC/RST/BL）</div></div>
+  <div class="step"><div class="n green">C</div><div><b>TFT 液晶屏</b>（ST7789V 控制器，1.54″/1.9″ 240×240，SPI 接口）— 显示表情、时钟、天气等内容。</div></div>
+  <div class="step"><div class="n blue">D</div><div style="margin-top:2px"><b>（可选扩展）ESP-01S WiFi</b> 挂在 USART2 上，接入心知天气 / 高德 API 获取实时天气。</div></div>
+</div>
+<div class="info"><b>职责划分要点：</b>ASRPRO 只做「耳朵和嘴」，识别到命令后<b>只发一个指令码</b>；所有显示逻辑、页面状态机都在 STM32 上。这样 ASRPRO 侧逻辑简单，语音固件与 UI 固件可独立迭代喵。</div>
+
+<!-- ============ 3 ============ -->
+<h2 id="s3"><span class="no">03</span>硬件设计</h2>
+
+<h3>3.1 物料清单（BOM）</h3>
+<table>
+  <tr><th>模块</th><th>规格</th><th>数量</th><th>说明</th></tr>
+  <tr><td>STM32 最小系统板</td><td>STM32F103C8T6（BluePill / 核心板）</td><td>1</td><td>本工程目标板，SWD 下载</td></tr>
+  <tr><td>TFT 显示屏</td><td>1.54″ 或 1.9″ SPI，ST7789V，240×240</td><td>1</td><td>选带 CS/DC/RST/BL 完整引脚的模块</td></tr>
+  <tr><td>ASRPRO 模块</td><td>天问 ASRPRO-2M（含麦克风与功放）</td><td>1</td><td>离线识别，UART 通信</td></tr>
+  <tr><td>小喇叭</td><td>8Ω 0.5W（若 ASRPRO 板不含）</td><td>1</td><td>语音播报</td></tr>
+  <tr><td>电源</td><td>USB 5V + AMS1117-3.3</td><td>1</td><td>或直接用两块板自带的稳压</td></tr>
+  <tr><td>（可选）ESP-01S</td><td>ESP8266 WiFi 模块</td><td>1</td><td>接 USART2 联网取天气</td></tr>
+  <tr><td>杂项</td><td>杜邦线、排针、开关、外壳</td><td>—</td><td>3D 打印外壳或木质相框改造</td></tr>
+</table>
+
+<h3 id="s3-1">3.2 引脚分配表</h3>
+<p>当前 <code>TFT.ioc</code> 已配置 SPI1 与双串口，但 TFT 的四个控制脚尚未在 CubeMX 中分配。推荐补充分配如下（均为空闲 GPIO）：</p>
+<table>
+  <tr><th>外设信号</th><th>STM32 引脚</th><th>方向</th><th>备注</th></tr>
+  <tr><td>SPI1_SCK</td><td class="pin">PA5</td><td>输出</td><td>已配置 ✓</td></tr>
+  <tr><td>SPI1_MISO</td><td class="pin">PA6</td><td>输入</td><td>已配置 ✓（ST7789 无 MISO 可悬空）</td></tr>
+  <tr><td>SPI1_MOSI</td><td class="pin">PA7</td><td>输出</td><td>已配置 ✓</td></tr>
+  <tr><td>TFT_CS（片选）</td><td class="pin">PA4</td><td>输出</td><td><b>需新增</b>，GPIO_Output，默认高</td></tr>
+  <tr><td>TFT_DC（数据/命令）</td><td class="pin">PA8</td><td>输出</td><td><b>需新增</b>，GPIO_Output</td></tr>
+  <tr><td>TFT_RST（复位）</td><td class="pin">PB0</td><td>输出</td><td><b>需新增</b>，GPIO_Output，默认高</td></tr>
+  <tr><td>TFT_BL（背光）</td><td class="pin">PB1</td><td>输出</td><td><b>需新增</b>，可改 TIM3_CH4 做 PWM 调光</td></tr>
+  <tr><td>USART1_TX → ASRPRO_RX</td><td class="pin">PA9</td><td>输出</td><td>已配置 ✓，语音链路</td></tr>
+  <tr><td>USART1_RX ← ASRPRO_TX</td><td class="pin">PA10</td><td>输入</td><td>已配置 ✓，语音链路</td></tr>
+  <tr><td>USART2_TX（调试/ESP01）</td><td class="pin">PA2</td><td>输出</td><td>已配置 ✓</td></tr>
+  <tr><td>USART2_RX（调试/ESP01）</td><td class="pin">PA3</td><td>输入</td><td>已配置 ✓</td></tr>
+  <tr><td>SWDIO / SWCLK</td><td class="pin">PA13 / PA14</td><td>—</td><td>调试下载口，勿挪用</td></tr>
+</table>
+<div class="warn"><b>注意：</b>PA15、PB3、PB4 默认是 JTAG 调试脚，若要当 GPIO 用需先开 <code>__HAL_AFIO_REMAP_SWJ_NOJTAG()</code>；本项目引脚充足，建议避开这几个脚喵。</div>
+
+<h3 id="s3-2">3.3 接线表（STM32 ↔ 外设）</h3>
+<h4>① STM32 ↔ TFT（ST7789 SPI 模块）</h4>
+<table>
+  <tr><th>TFT 引脚</th><th>STM32 引脚</th><th>说明</th></tr>
+  <tr><td>VCC</td><td>3.3V</td><td>多数 ST7789 模块<b>只能 3.3V</b>，勿接 5V！</td></tr>
+  <tr><td>GND</td><td>GND</td><td>共地</td></tr>
+  <tr><td>SCL</td><td>PA5</td><td>SPI 时钟</td></tr>
+  <tr><td>SDA</td><td>PA7</td><td>SPI 数据（MOSI）</td></tr>
+  <tr><td>RES</td><td>PB0</td><td>复位</td></tr>
+  <tr><td>DC</td><td>PA8</td><td>命令/数据选择</td></tr>
+  <tr><td>CS</td><td>PA4</td><td>片选</td></tr>
+  <tr><td>BLK</td><td>PB1</td><td>背光（不接常亮）</td></tr>
+</table>
+<h4>② STM32 ↔ ASRPRO</h4>
+<table>
+  <tr><th>ASRPRO 引脚</th><th>STM32 引脚</th><th>说明</th></tr>
+  <tr><td>VCC / GND</td><td>3.3V / GND</td><td>ASRPRO 支持 5V 供电（板上稳压），信号 3.3V 逻辑</td></tr>
+  <tr><td>UART_TX</td><td>PA10（USART1_RX）</td><td>交叉连接！</td></tr>
+  <tr><td>UART_RX</td><td>PA9（USART1_TX）</td><td>交叉连接！</td></tr>
+  <tr><td>喇叭</td><td>—</td><td>接 ASRPRO 板载功放输出口（SPK+/SPK-）</td></tr>
+  <tr><td>麦克风</td><td>—</td><td>板载 MIC，注意离喇叭 &gt;5cm 防自激</td></tr>
+</table>
+<div class="tip"><b>共地！</b>三块板（STM32 / TFT / ASRPRO）必须全部共地，否则串口会出现乱码、SPI 花屏喵。</div>
+
+<h3>3.4 供电设计</h3>
+<ul>
+  <li>整机峰值电流：TFT 背光约 <b>30–50mA</b> + ASRPRO 识别时 <b>~50mA</b> + STM32 <b>~40mA</b> ≈ 150mA 内，USB 供电完全够。</li>
+  <li>走线建议：电源与信号分开走；背光电流较大，若屏幕偏暗可在 BL 电路加一只 100Ω 限流调整亮度。</li>
+  <li>调试阶段用 ST-Link 供电 + USB 双路时，确保两路 5V 来源共地。</li>
+</ul>
+
+<!-- ============ 4 ============ -->
+<h2 id="s4"><span class="no">04</span>CubeMX 工程配置</h2>
+<p>当前 <code>TFT.ioc</code> 已完成的配置（可直接沿用）：</p>
+<table>
+  <tr><th>项目</th><th>当前配置</th><th>评价 / 建议</th></tr>
+  <tr><td>MCU / 封装</td><td>STM32F103C8Tx，LQFP48</td><td>✓</td></tr>
+  <tr><td>时钟</td><td>HSE 8MHz ×PLL9 = <b>72MHz</b></td><td>✓ 满速运行</td></tr>
+  <tr><td>SPI1</td><td>全双工主机，Prescaler=4 → <b>18Mbps</b></td><td>建议改 Prescaler=2 → <b>36Mbps</b>，ST7789 支持，刷屏快一倍</td></tr>
+  <tr><td>SPI1_TX DMA</td><td>DMA1_Channel3，Byte，MINC 开</td><td>✓ 已配好，刷屏核心</td></tr>
+  <tr><td>USART1</td><td>115200-8-N-1，RX/TX 均开 DMA + 中断</td><td>✓ 对接 ASRPRO</td></tr>
+  <tr><td>USART2</td><td>115200-8-N-1，RX/TX 均开 DMA + 中断</td><td>✓ 调试口 / 预留 WiFi</td></tr>
+  <tr><td>FreeRTOS</td><td>未启用</td><td>裸机 + 软定时器足够（见第 8 章）</td></tr>
+</table>
+<p><b>还需要在 CubeMX 补充的步骤：</b></p>
+<ol>
+  <li>System Core → GPIO：新增 <code>PA4</code>、<code>PA8</code>、<code>PB0</code>、<code>PB1</code> 四个 <code>GPIO_Output</code>，User Label 分别填 <code>TFT_CS / TFT_DC / TFT_RST / TFT_BL</code>，输出级别 CS/RST/BL 设 High，DC 设 Low。</li>
+  <li>SPI1 参数确认：<code>CPOL=Low</code>、<code>CPHA=1 Edge</code>（Mode 0）、<code>First Bit=MSB</code>、<code>Data Size=8bit</code>、NSS 由软件控制（Hardware NSS 保持 Disable）。</li>
+  <li>（推荐）SPI1 Baud Rate Prescaler 从 4 改为 <b>2</b>。</li>
+  <li>（可选）背光调光：把 PB1 改为 <code>TIM3_CH4</code> PWM 输出，做呼吸灯 / 亮度调节。</li>
+  <li>重新 Generate Code（勾选 Keep User Code），Keil 中编译确认 0 Error。</li>
+</ol>
+<div class="info"><b>帧率估算喵：</b>240×240×16bit 全屏 = 115200 字节。SPI 36Mbps 下理论 ~3.9ms，加命令开销全屏 ~7ms（≈140fps）；局部区域（如 64×64 表情框）只需 8KB，<b>毫无压力实现流畅动画</b>。20KB RAM 放不下全屏帧缓冲，所以所有绘图 API 都直接「写窗口 → 推像素」到屏幕 GRAM。</div>
+
+<!-- ============ 5 ============ -->
+<h2 id="s5"><span class="no">05</span>TFT 显示驱动开发</h2>
+<p>新建 <code>Core/Inc/lcd.h</code> 与 <code>Core/Src/lcd.c</code>（在 Keil 中加入工程）。驱动分四层：</p>
+<ul>
+  <li><b>Port 层</b>：SPI 收发 + 控制脚（放在 USER CODE 区防止 CubeMX 覆盖）</li>
+  <li><b>Init 层</b>：ST7789 上电初始化序列</li>
+  <li><b>Draw 层</b>：画点 / 填充 / 窗口 / 字符 / 图片</li>
+  <li><b>Util 层</b>：帧同步、双缓冲小技巧</li>
+</ul>
+
+<h3>5.1 Port 层（引脚与 SPI 封装）</h3>
+<pre><code><span class="c-cm">/* lcd.h 关键宏定义 */</span>
+<span class="c-kw">#define</span> LCD_CS_LOW()   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET)
+<span class="c-kw">#define</span> LCD_CS_HIGH()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET)
+<span class="c-kw">#define</span> LCD_DC_LOW()   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET)  <span class="c-cm">/* 命令 */</span>
+<span class="c-kw">#define</span> LCD_DC_HIGH()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET)    <span class="c-cm">/* 数据 */</span>
+<span class="c-kw">#define</span> LCD_RST_LOW()  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET)
+<span class="c-kw">#define</span> LCD_RST_HIGH() HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET)
+<span class="c-kw">#define</span> LCD_BL_ON()   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET)
+<span class="c-kw">#define</span> LCD_BL_OFF()  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET)
+
+<span class="c-kw">#define</span> LCD_W 240
+<span class="c-kw">#define</span> LCD_H 240
+
+<span class="c-type">void</span> <span class="c-fn">LCD_WriteCmd</span>(<span class="c-type">uint8_t</span> cmd);
+<span class="c-type">void</span> <span class="c-fn">LCD_WriteData</span>(<span class="c-type">uint8_t</span> *buf, <span class="c-type">uint16_t</span> len);
+<span class="c-type">void</span> <span class="c-fn">LCD_Init</span>(<span class="c-type">void</span>);</code></pre>
+
+<pre><code><span class="c-cm">/* lcd.c —— 底层写命令 / 写数据（阻塞，仅初始化与小数据量用） */</span>
+<span class="c-type">void</span> <span class="c-fn">LCD_WriteCmd</span>(<span class="c-type">uint8_t</span> cmd)
+{
+    LCD_DC_LOW();                       <span class="c-cm">/* DC=0 表示命令 */</span>
+    LCD_CS_LOW();
+    HAL_SPI_Transmit(&hspi1, &cmd, 1, 100);
+    LCD_CS_HIGH();
+}
+
+<span class="c-type">void</span> <span class="c-fn">LCD_WriteData</span>(<span class="c-type">uint8_t</span> *buf, <span class="c-type">uint16_t</span> len)
+{
+    LCD_DC_HIGH();                      <span class="c-cm">/* DC=1 表示数据 */</span>
+    LCD_CS_LOW();
+    HAL_SPI_Transmit(&hspi1, buf, len, 1000);
+    LCD_CS_HIGH();
+}</code></pre>
+
+<h3 id="s5-1">5.2 ST7789 初始化序列</h3>
+<pre><code><span class="c-cm">/* ST7789V 上电初始化（240x240） */</span>
+<span class="c-type">void</span> <span class="c-fn">LCD_Init</span>(<span class="c-type">void</span>)
+{
+    LCD_BL_OFF();
+    LCD_RST_HIGH();  HAL_Delay(10);
+    LCD_RST_LOW();   HAL_Delay(10);   <span class="c-cm">/* 硬复位 &gt;10us */</span>
+    LCD_RST_HIGH();  HAL_Delay(120);
+
+    LCD_WriteCmd(0x11);               <span class="c-cm">/* Sleep Out        */</span>
+    HAL_Delay(120);
+
+    LCD_WriteCmd(0x36);               <span class="c-cm">/* MADCTL 屏幕方向   */</span>
+    { <span class="c-type">uint8_t</span> v = 0x00; LCD_WriteData(&v, 1); }  <span class="c-cm">/* 0x00 竖屏 / 0x60 / 0xC0 / 0xA0 */</span>
+
+    LCD_WriteCmd(0x3A);               <span class="c-cm">/* COLMOD 16bit 色   */</span>
+    { <span class="c-type">uint8_t</span> v = 0x55; LCD_WriteData(&v, 1); }
+
+    LCD_WriteCmd(0xB2);               <span class="c-cm">/* Porch 设置 */</span>
+    { <span class="c-type">uint8_t</span> v[5] = {0x0C,0x0C,0x00,0x33,0x33}; LCD_WriteData(v,5); }
+
+    LCD_WriteCmd(0xB7);               <span class="c-cm">/* Gate 电压 */</span>
+    { <span class="c-type">uint8_t</span> v = 0x35; LCD_WriteData(&v,1); }
+
+    LCD_WriteCmd(0xBB);               <span class="c-cm">/* VCOM 设置 */</span>
+    { <span class="c-type">uint8_t</span> v = 0x19; LCD_WriteData(&v,1); }
+
+    LCD_WriteCmd(0xC2);               <span class="c-cm">/* VDV/VRH */</span>
+    { <span class="c-type">uint8_t</span> v[2] = {0x01,0xC3}; LCD_WriteData(v,2); }
+
+    LCD_WriteCmd(0xC6);               <span class="c-cm">/* 帧率 60Hz */</span>
+    { <span class="c-type">uint8_t</span> v = 0x0F; LCD_WriteData(&v,1); }
+
+    LCD_WriteCmd(0xD0);               <span class="c-cm">/* 功率控制 */</span>
+    { <span class="c-type">uint8_t</span> v[2] = {0xA4,0xA1}; LCD_WriteData(v,2); }
+
+    LCD_WriteCmd(0x21);               <span class="c-cm">/* 反色（ST7789 多数模块需要）*/</span>
+    LCD_WriteCmd(0xE0);               <span class="c-cm">/* 正极性 Gamma */</span>
+    { <span class="c-type">uint8_t</span> v[14] = {0xD0,0x04,0x0D,0x11,0x13,0x2B,0x3F,
+                          0x54,0x4C,0x18,0x0D,0x0B,0x1F,0x23};
+      LCD_WriteData(v,14); }
+    LCD_WriteCmd(0xE1);               <span class="c-cm">/* 负极性 Gamma */</span>
+    { <span class="c-type">uint8_t</span> v[14] = {0xD0,0x04,0x0C,0x11,0x13,0x2C,0x3F,
+                          0x44,0x51,0x2F,0x1F,0x1F,0x20,0x23};
+      LCD_WriteData(v,14); }
+
+    LCD_WriteCmd(0x29);               <span class="c-cm">/* Display ON */</span>
+    HAL_Delay(50);
+    LCD_BL_ON();
+}</code></pre>
+<div class="tip"><b>花屏/白屏先查这三个喵：</b>① 0x21 反色指令——部分模块不需要，白屏了就去掉；② MADCTL(0x36) 与偏移——个别 1.3″ 屏有 0x02 行偏移，竖屏需要 y+2；③ 3.3V 供电是否稳定（背光闪 = 电源带载不足）。</div>
+
+<h3 id="s5-2">5.3 基础绘图 API</h3>
+<pre><code><span class="c-cm">/* 设置写窗口：之后连续写入的数据只落在这个矩形内（省 RAM 的核心！）*/</span>
+<span class="c-type">void</span> <span class="c-fn">LCD_SetWindow</span>(<span class="c-type">uint16_t</span> x1, <span class="c-type">uint16_t</span> y1, <span class="c-type">uint16_t</span> x2, <span class="c-type">uint16_t</span> y2)
+{
+    <span class="c-type">uint8_t</span> buf[4];
+    LCD_WriteCmd(0x2A);               <span class="c-cm">/* CASET 列地址 */</span>
+    buf[0]=x1&gt;&gt;8; buf[1]=x1; buf[2]=x2&gt;&gt;8; buf[3]=x2;
+    LCD_WriteData(buf, 4);
+    LCD_WriteCmd(0x2B);               <span class="c-cm">/* RASET 行地址 */</span>
+    buf[0]=y1&gt;&gt;8; buf[1]=y1; buf[2]=y2&gt;&gt;8; buf[3]=y2;
+    LCD_WriteData(buf, 4);
+    LCD_WriteCmd(0x2C);               <span class="c-cm">/* RAMWR 开始写 GRAM */</span>
+}
+
+<span class="c-cm">/* 矩形填充（清屏 / 背景色 / 进度条）—— 用 DMA 发送 */</span>
+<span class="c-type">void</span> <span class="c-fn">LCD_Fill</span>(<span class="c-type">uint16_t</span> x1, <span class="c-type">uint16_t</span> y1, <span class="c-type">uint16_t</span> x2, <span class="c-type">uint16_t</span> y2, <span class="c-type">uint16_t</span> color)
+{
+    <span class="c-type">uint32_t</span> total = (<span class="c-type">uint32_t</span>)(x2-x1+1) * (y2-y1+1);
+    <span class="c-type">uint16_t</span> chunk[64];                     <span class="c-cm">/* 128B 小缓冲，分块填 */</span>
+    <span class="c-kw">for</span> (<span class="c-type">int</span> i = 0; i &lt; 64; i++) chunk[i] = color;
+
+    LCD_SetWindow(x1, y1, x2, y2);
+    LCD_DC_HIGH(); LCD_CS_LOW();
+    <span class="c-kw">while</span> (total) {
+        <span class="c-type">uint16_t</span> n = (total &gt; 64) ? 64 : total;
+        HAL_SPI_Transmit_DMA(&hspi1, (<span class="c-type">uint8_t</span>*)chunk, n*2);
+        <span class="c-kw">while</span> (hspi1.State != HAL_SPI_STATE_READY);  <span class="c-cm">/* 等 DMA 完成 */</span>
+        total -= n;
+    }
+    LCD_CS_HIGH();
+}
+
+<span class="c-cm">/* 画图片（RGB565 数组，取模软件生成）—— 同样 DMA 直推 */</span>
+<span class="c-type">void</span> <span class="c-fn">LCD_DrawBitmap</span>(<span class="c-type">uint16_t</span> x, <span class="c-type">uint16_t</span> y, <span class="c-type">uint16_t</span> w, <span class="c-type">uint16_t</span> h, <span class="c-kw">const</span> <span class="c-type">uint16_t</span> *bmp)
+{
+    LCD_SetWindow(x, y, x+w-1, y+h-1);
+    LCD_DC_HIGH(); LCD_CS_LOW();
+    <span class="c-cm">/* 小图一次性发；大图按 512 字节分块（见 5.4 优化版）*/</span>
+    HAL_SPI_Transmit(&hspi1, (<span class="c-type">uint8_t</span>*)bmp, w*h*2, 2000);
+    LCD_CS_HIGH();
+}</code></pre>
+
+<h3 id="s5-3">5.4 DMA 刷屏的正确姿势</h3>
+<p>DMA 传输期间 <b>源缓冲区不能被修改、不能在栈上被回收</b>，且单次传输计数最大 65535。工程实践：</p>
+<pre><code><span class="c-cm">/* 大图分块 DMA 搬运（图片存 Flash，DMA 可直接读 Flash） */</span>
+<span class="c-type">void</span> <span class="c-fn">LCD_DrawBitmapDMA</span>(<span class="c-type">uint16_t</span> x, <span class="c-type">uint16_t</span> y,
+                       <span class="c-type">uint16_t</span> w, <span class="c-type">uint16_t</span> h, <span class="c-kw">const</span> <span class="c-type">uint16_t</span> *bmp)
+{
+    <span class="c-type">uint32_t</span> remain = (<span class="c-type">uint32_t</span>)w * h * 2;   <span class="c-cm">/* 总字节数 */</span>
+    <span class="c-kw">const</span> <span class="c-type">uint8_t</span> *p = (<span class="c-kw">const</span> <span class="c-type">uint8_t</span>*)bmp;
+
+    LCD_SetWindow(x, y, x+w-1, y+h-1);
+    LCD_DC_HIGH(); LCD_CS_LOW();
+    <span class="c-kw">while</span> (remain) {
+        <span class="c-type">uint16_t</span> n = (remain &gt; 32000) ? 32000 : remain;
+        HAL_SPI_Transmit_DMA(&hspi1, (<span class="c-type">uint8_t</span>*)p, n);
+        <span class="c-kw">while</span> (HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
+        p += n;  remain -= n;
+    }
+    LCD_CS_HIGH();
+}</code></pre>
+<div class="warn"><b>DMA 陷阱（Shiro 踩过的坑喵）：</b>① 图片数组必须加 <code>const</code>，否则会占用本就不富裕的 RAM；② 轮询 <code>hspi1.State</code> 即可，若改用中断回调方式，注意 CS 必须在「传输完成回调」里才拉高，不能在启动后就拉高；③ CubeMX 里 SPI1_TX 的 DMA 已开 <code>MINC</code>，正确✓。</div>
+
+<h3 id="s5-4">5.5 字符、汉字与表情</h3>
+<ul>
+  <li><b>ASCII 字符（8×16）</b>：直接内置字模数组，用于时间数字、调试信息。想要大号时间可再做 16×32 / 24×48 数字字模。</li>
+  <li><b>中文/任意字体</b>：用 <b>PCtoLCD2002</b> 取模：阴码、逐行式、顺向（高位在前）、RGB565 可用「图片取模」模式。挂件文案固定（如「天气」「温度」），每个汉字 16×16 占 512B，几十个字毫无压力。</li>
+  <li><b>表情图片</b>：用 <b>Image2Lcd</b> 或 <b>Img2Lcd（在线版）</b>：输出 RGB565、水平扫描、包含图像头部分「不勾选」。240×240 全屏图 = 115KB —— <b>超过 Flash 一半</b>！表情建议做 128×128（32KB/张）或 96×96（18KB/张），Flash 64KB 里预留 ~40KB 给 2~3 张全屏底图 + 若干小表情。</li>
+</ul>
+<pre><code><span class="c-cm">/* 在 (x,y) 显示一个 16x16 汉字（取模为 RGB565 逐行扫描） */</span>
+<span class="c-type">void</span> <span class="c-fn">LCD_ShowChinese16</span>(<span class="c-type">uint16_t</span> x, <span class="c-type">uint16_t</span> y, <span class="c-kw">const</span> <span class="c-type">uint16_t</span> *hanzi)
+{
+    LCD_DrawBitmapDMA(x, y, 16, 16, hanzi);
+}</code></pre>
+
+<!-- ============ 6 ============ -->
+<h2 id="s6"><span class="no">06</span>ASRPRO 语音模块开发</h2>
+
+<h3>6.1 模块认识</h3>
+<p>ASRPRO（天问科技）是一颗<b>离线语音识别 SoC</b>：内置麦克风采集、降噪、识别引擎与 TTS 播报，无需联网。使用官方 <b>天问Block</b> 软件（图形化 + C 代码双模式）编程，Type-C 直插电脑下载固件。</p>
+<table>
+  <tr><th>特性</th><th>说明</th></tr>
+  <tr><td>识别方式</td><td>离线，唤醒词 + 命令词，支持 100+ 条词条</td></tr>
+  <tr><td>唤醒词</td><td>默认「你好小问」，可在天问Block 中自定义训练</td></tr>
+  <tr><td>输出能力</td><td>板载功放驱动 8Ω 喇叭，TTS 中文播报</td></tr>
+  <tr><td>通信口</td><td>多组 UART，与 STM32 交互指令码</td></tr>
+  <tr><td>供电</td><td>5V 或 3.3V（看模块丝印），逻辑 3.3V</td></tr>
+</table>
+
+<h3>6.2 词条规划（挂件场景）</h3>
+<table>
+  <tr><th>类型</th><th>词条</th><th>指令码 CMD</th><th>ASRPRO 应答（TTS）</th></tr>
+  <tr><td>唤醒词</td><td>「你好小挂」</td><td>—（唤醒后 10s 内监听命令）</td><td>「我在呢」</td></tr>
+  <tr><td>命令</td><td>「切换表情」</td><td>0x01</td><td>「好的」</td></tr>
+  <tr><td>命令</td><td>「显示时间」</td><td>0x02</td><td>—（由屏幕显示）</td></tr>
+  <tr><td>命令</td><td>「显示天气」</td><td>0x03</td><td>—</td></tr>
+  <tr><td>命令</td><td>「开心一点」</td><td>0x04</td><td>「好耶！」</td></tr>
+  <tr><td>命令</td><td>「无聊」</td><td>0x05</td><td>随机冷笑话接口（STM32 切页面显示）</td></tr>
+  <tr><td>命令</td><td>「关屏幕 / 亮屏幕」</td><td>0x06 / 0x07</td><td>背光开关</td></tr>
+  <tr><td>命令</td><td>「你叫什么名字」</td><td>0x08</td><td>「我是你的桌面小伙伴呀」</td></tr>
+</table>
+
+<h3 id="s6-1">6.3 天问Block 端编程要点</h3>
+<p>天问Block 使用类 C 语法，核心思路：<b>识别到词条 → 串口发送一帧指令 → 播报应答</b>。</p>
+<pre><code><span class="c-cm">/* 天问Block 中 ASRPRO 侧逻辑（示意，实际在图形界面拼接） */</span>
+<span class="c-kw">#include</span> <span class="c-str">"asrlib.h"</span>
+
+<span class="c-type">void</span> <span class="c-fn">ASR_CODE</span>()
+{
+    <span class="c-cm">/* 已知唤醒词触发，进入命令窗口期 */</span>
+    <span class="c-fn">set_state_enter_wake</span>();
+
+    <span class="c-kw">switch</span> (<span class="c-fn">get_voice_id</span>()) {          <span class="c-cm">/* 获取识别到的词条 ID */</span>
+    <span class="c-kw">case</span> <span class="c-num">1</span>:  <span class="c-cm">/* "切换表情" */</span>
+        <span class="c-fn">uart_send_frame</span>(0x01);            <span class="c-cm">/* 发指令给 STM32 */</span>
+        <span class="c-fn">play_speech</span>(<span class="c-str">"好的"</span>);
+        <span class="c-kw">break</span>;
+    <span class="c-kw">case</span> <span class="c-num">2</span>:  <span class="c-cm">/* "显示时间" */</span>
+        <span class="c-fn">uart_send_frame</span>(0x02);
+        <span class="c-kw">break</span>;
+    <span class="c-kw">case</span> <span class="c-num">4</span>:  <span class="c-cm">/* "开心一点" */</span>
+        <span class="c-fn">uart_send_frame</span>(0x04);
+        <span class="c-fn">play_speech</span>(<span class="c-str">"好耶，我最开心啦"</span>);
+        <span class="c-kw">break</span>;
+    <span class="c-cm">/* ... 其余词条 */</span>
+    }
+}</code></pre>
+<ol>
+  <li>在天问Block「语音识别」页签里添加上表词条，为每条分配 ID。</li>
+  <li>用「串口发送」积木按第 7 章的帧格式发送指令（可直接调用串口写十六进制数组积木）。</li>
+  <li>TTS 播报用「播放语音 / 提示音」积木，可用官方 TTS 在线合成或导出提示音 wav。</li>
+  <li>编译下载：Type-C 连接模块 → 一键下载 → 断电重上电测试唤醒。</li>
+</ol>
+<div class="tip"><b>调音技巧喵：</b>喇叭与麦克风距离 &gt;5cm，且 TTS 播报期间 ASRPRO 会自动回声消除；如果误唤醒率高，在天问Block 里把唤醒词阈值（识别等级）调高 1~2 档。</div>
+
+<!-- ============ 7 ============ -->
+<h2 id="s7"><span class="no">07</span>通信协议设计（ASRPRO ⇄ STM32）</h2>
+<p>双端自定义帧协议，简单可靠，带校验和，方便串口助手调试：</p>
+<table>
+  <tr><th>字节位</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4…</th><th>末字节</th></tr>
+  <tr><td>含义</td><td><b>帧头</b> 0xAA</td><td><b>帧头</b> 0x55</td><td><b>CMD</b></td><td><b>LEN</b></td><td>DATA…（N 字节）</td><td><b>SUM</b>（CMD+LEN+DATA 之和低 8 位）</td></tr>
+</table>
+<p>例：「切换表情」完整帧 = <code>AA 55 01 00 01</code>；「显示时间」= <code>AA 55 02 00 02</code>。</p>
+
+<h3>7.1 STM32 接收状态机（DMA + 空闲中断，已具备硬件条件）</h3>
+<p>当前工程 USART1 的 RX 已配置 DMA 与中断，推荐使用<b>串口空闲中断（IDLE）+ DMA</b> 方案——ASRPRO 的帧是短促突发，IDLE 中断天然分帧，不需要逐字节中断：</p>
+<pre><code><span class="c-cm">/* usart.c —— USER CODE 区添加 */</span>
+<span class="c-kw">#define</span> RXBUF_SIZE 64
+<span class="c-type">uint8_t</span>  rx1_buf[RXBUF_SIZE];
+<span class="c-type">volatile</span> <span class="c-type">uint16_t</span> rx1_len = 0;
+<span class="c-type">volatile</span> <span class="c-type">uint8_t</span>  rx1_flag = 0;      <span class="c-cm">/* 1=收到一帧 */</span>
+
+<span class="c-type">void</span> <span class="c-fn">UART1_StartIdleRx</span>(<span class="c-type">void</span>)
+{
+    <span class="c-cm">/* 使能 IDLE 中断 + 启动 DMA 接收 */</span>
+    __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
+    HAL_UART_Receive_DMA(&huart1, rx1_buf, RXBUF_SIZE);
+}
+
+<span class="c-cm">/* stm32f1xx_it.c 的 USART1_IRQHandler 里，USER CODE 区调用 */</span>
+<span class="c-type">void</span> <span class="c-fn">USART1_IDLE_Handler</span>(<span class="c-type">void</span>)
+{
+    <span class="c-kw">if</span> (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE)) {
+        __HAL_UART_CLEAR_IDLEFLAG(&huart1);
+        HAL_UART_DMAStop(&huart1);
+        rx1_len = RXBUF_SIZE - __HAL_DMA_GET_COUNTER(&hdma_usart1_rx);
+        rx1_flag = 1;                                <span class="c-cm">/* 交由主循环解析 */</span>
+        HAL_UART_Receive_DMA(&huart1, rx1_buf, RXBUF_SIZE);  <span class="c-cm">/* 重启接收 */</span>
+    }
+}</code></pre>
+
+<h3>7.2 帧解析与指令分发</h3>
+<pre><code><span class="c-cm">/* 主循环里非阻塞轮询（详见第 8 章架构） */</span>
+<span class="c-type">uint8_t</span> <span class="c-fn">Protocol_Parse</span>(<span class="c-type">uint8_t</span> *frame, <span class="c-type">uint16_t</span> len, <span class="c-type">uint8_t</span> *cmd)
+{
+    <span class="c-kw">if</span> (len &lt; 5) <span class="c-kw">return</span> 0;
+    <span class="c-kw">if</span> (frame[0]!=0xAA || frame[1]!=0x55) <span class="c-kw">return</span> 0;
+    <span class="c-type">uint8_t</span> sum = 0;
+    <span class="c-kw">for</span> (<span class="c-type">uint16_t</span> i = 2; i &lt; len-1; i++) sum += frame[i];
+    <span class="c-kw">if</span> (sum != frame[len-1]) <span class="c-kw">return</span> 0;   <span class="c-cm">/* 校验失败，丢弃 */</span>
+    *cmd = frame[2];
+    <span class="c-kw">return</span> 1;
+}</code></pre>
+
+<h3>7.3 调试方法</h3>
+<ul>
+  <li><b>先甩开 ASRPRO 单测 STM32</b>：USB-TTL 接 PA10/PA9，用串口助手以 HEX 模式手发 <code>AA 55 01 00 01</code>，看屏幕是否切表情。</li>
+  <li><b>再甩开 STM32 单测 ASRPRO</b>：USB-TTL 接 ASRPRO TX，串口助手 HEX 收，确认识别后帧完整、校验正确。</li>
+  <li>两头都通了再对接，问题基本只剩「交叉接反」和「没共地」喵。</li>
+</ul>
+
+<!-- ============ 8 ============ -->
+<h2 id="s8"><span class="no">08</span>应用层架构（裸机软定时器）</h2>
+<p>不上 RTOS，用 <b>SysTick 1ms 节拍 + 软定时器 + 状态机</b>，20KB RAM 完全够用。建议新建 <code>app_ui.c</code>（页面状态机）与 <code>app_voice.c</code>（指令处理）：</p>
+<pre><code><span class="c-cm">/* app 层主骨架（main.c 的 USER CODE 区） */</span>
+<span class="c-type">typedef</span> <span class="c-kw">enum</span> { PAGE_CLOCK, PAGE_WEATHER, PAGE_EMOJI, PAGE_JOKE } Page_t;
+<span class="c-type">typedef</span> <span class="c-kw">struct</span> {
+    <span class="c-type">uint32_t</span> tick_ms;        <span class="c-cm">/* 软定时器 */</span>
+    <span class="c-type">uint8_t</span>  page;           <span class="c-cm">/* 当前页面 */</span>
+    <span class="c-type">uint8_t</span>  emoji_idx;      <span class="c-cm">/* 当前表情 */</span>
+    <span class="c-type">uint8_t</span>  need_refresh;   <span class="c-cm">/* 脏标记，避免无谓刷屏 */</span>
+} App_t;
+App_t g_app = {0};
+
+<span class="c-cm">/* SysTick 回调：HAL_SYSTICK_Callback()（weak 函数，重写即可）*/</span>
+<span class="c-type">void</span> <span class="c-fn">HAL_SYSTICK_Callback</span>(<span class="c-type">void</span>) { g_app.tick_ms++; }
+
+<span class="c-cm">/* main() 的 USER CODE 2 区： */</span>
+LCD_Init();  LCD_Fill(0,0,239,239, BLACK);
+UART1_StartIdleRx();
+UI_ShowPage(PAGE_CLOCK);
+
+<span class="c-cm">/* while(1) 区（全部非阻塞）： */</span>
+<span class="c-kw">while</span> (1)
+{
+    <span class="c-cm">/* 1. 处理语音指令帧 */</span>
+    <span class="c-kw">if</span> (rx1_flag) {
+        rx1_flag = 0;
+        <span class="c-type">uint8_t</span> cmd;
+        <span class="c-kw">if</span> (Protocol_Parse(rx1_buf, rx1_len, &cmd))
+            Voice_HandleCmd(cmd);            <span class="c-cm">/* 改页面/表情 + 置脏标记 */</span>
+    }
+    <span class="c-cm">/* 2. 秒级任务：时钟走秒 */</span>
+    <span class="c-kw">static</span> <span class="c-type">uint32_t</span> t_last;
+    <span class="c-kw">if</span> (g_app.tick_ms - t_last &gt;= 1000) { t_last += 1000; UI_Tick_1s(); g_app.need_refresh = 1; }
+    <span class="c-cm">/* 3. 帧级任务：表情动画 100ms 一帧 */</span>
+    <span class="c-kw">static</span> <span class="c-type">uint32_t</span> t_anim;
+    <span class="c-kw">if</span> (g_app.tick_ms - t_anim &gt;= 100) { t_anim += 100; UI_AnimStep(); }
+    <span class="c-cm">/* 4. 统一刷新（只刷脏区域）*/</span>
+    <span class="c-kw">if</span> (g_app.need_refresh) { g_app.need_refresh = 0; UI_Render(); }
+}</code></pre>
+<div class="info"><b>时间从哪来喵？</b>F103 有 VBAT 备份域 RTC：接一颗 CR1220 纽扣电池到 VBAT 引脚，CubeMX 开启 RTC（LSE 32.768kHz），断电重启时间不丢。若不接电池，每次上电用 USART2 调试口发指令校时，或日后由 WiFi 模块 NTP 对时。</div>
+
+<!-- ============ 9 ============ -->
+<h2 id="s9"><span class="no">09</span>UI 界面设计</h2>
+<div class="grid2">
+  <div class="card">
+    <h4>页面 1 · 时钟页（默认页）</h4>
+    <ul>
+      <li>大号数字 HH:MM（24×48 自制字模）居中</li>
+      <li>顶部小字：日期 + 星期</li>
+      <li>底部：小表情图标随秒闪烁（眨眼动画）</li>
+      <li>每秒只重绘数字区域（约 120×50 窗口），帧率无压力</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>页面 2 · 天气页</h4>
+    <ul>
+      <li>离线版：显示「天气图标 + 手动配置的温度」</li>
+      <li>联网版（ESP-01）：cityid + 心知天气 API，JSON 精简解析</li>
+      <li>语音「显示天气」直接跳转本页</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>页面 3 · 表情页</h4>
+    <ul>
+      <li>128×128 表情图（开心/委屈/呆滞/星星眼…）</li>
+      <li>96×96 双帧眨眼动画，100ms 交替</li>
+      <li>语音「开心一点」随机切换可爱表情</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>页面 4 · 彩蛋页</h4>
+    <ul>
+      <li>语音「无聊」触发：随机冷笑话（内置 20 条文本）</li>
+      <li>或滚动弹幕 / 简易小游戏（贪吃蛇）</li>
+    </ul>
+  </div>
+</div>
+<p><b>资源预算（Flash 64KB）：</b>代码 ~30KB + 全屏底图 1 张（115KB 超限 → 改用纯色背景绘制）+ 128×128 表情 3 张（96KB → 也超…）。实际策略：表情压缩到 <b>64×64（8KB/张）</b>，可存 15 张以上；背景用 <code>LCD_Fill</code> 纯色 + 圆角矩形绘制，把 Flash 留给字模和逻辑喵。</p>
+
+<!-- ============ 10 ============ -->
+<h2 id="s10"><span class="no">10</span>开发里程碑</h2>
+<table>
+  <tr><th>阶段</th><th>目标</th><th>验收标准</th><th>预计工作量</th></tr>
+  <tr><td><b>M0</b> 工程准备</td><td>CubeMX 补 4 个 GPIO、SPI 提速到 36MHz、重新生成</td><td>编译 0 Error 0 Warning</td><td>0.5 天</td></tr>
+  <tr><td><b>M1</b> 点屏</td><td>lcd.c 移植，初始化 + 全屏填充变色</td><td>屏幕循环红/绿/蓝刷新</td><td>0.5~1 天</td></tr>
+  <tr><td><b>M2</b> 绘图完备</td><td>窗口/填充/字模/图片 API + DMA 版本</td><td>显示 ASCII、汉字、一张测试图</td><td>1 天</td></tr>
+  <tr><td><b>M3</b> 时钟应用</td><td>RTC 或软时钟 + 时钟页 UI + 秒刷新</td><td>时间准确走秒不闪烁</td><td>1 天</td></tr>
+  <tr><td><b>M4</b> 语音链路</td><td>ASRPRO 天问Block 编程 + 帧协议双端联调</td><td>「切换表情」语音 → 屏幕响应 &lt;0.5s</td><td>1~2 天</td></tr>
+  <tr><td><b>M5</b> 整合打磨</td><td>四页面状态机 + 表情动画 + 背光控制</td><td>完整 demo 演示</td><td>1~2 天</td></tr>
+  <tr><td><b>M6</b> 结构封装</td><td>3D 打印/相框外壳，走线收纳</td><td>桌面摆件成品</td><td>自由发挥</td></tr>
+</table>
+<div class="tip">每个里程碑结束打一个 git tag 喵！M4 之前 STM32 与 ASRPRO 完全可以并行开发（先定好协议表），效率翻倍。</div>
+
+<!-- ============ 11 ============ -->
+<h2 id="s11"><span class="no">11</span>常见问题 FAQ</h2>
+<table>
+  <tr><th>症状</th><th>原因排查</th></tr>
+  <tr><td>屏幕全白</td><td>① RST 接线松；② 初始化序列没发全（尤其 0x11 后要 delay 120ms）；③ 模块不需要 0x21 反色，试着去掉</td></tr>
+  <tr><td>屏幕花屏/错位</td><td>① SPI 模式不是 Mode 0；② MADCTL 与屏幕行列起点偏移（试 y+2）；③ DMA 缓冲被修改</td></tr>
+  <tr><td>颜色反了（蓝脸）</td><td>RGB/BGR 顺序反了：在 0x36 MADCTL 中翻转 BIT3（0x00 ↔ 0x08）</td></tr>
+  <tr><td>刷屏卡顿</td><td>① SPI 还是 Prescaler 4（18Mbps），改 2；② 用了阻塞 HAL_SPI_Transmit 而没走 DMA；③ 每次都全屏重刷，改局部脏区域</td></tr>
+  <tr><td>串口收到乱码</td><td>① 波特率不一致；② TX/RX 没交叉；③ 没共地；④ DMA 接收缓冲溢出（检查 IDLE 处理是否重启了接收）</td></tr>
+  <tr><td>ASRPRO 不识别</td><td>① 唤醒词阈值太严；② 喇叭离麦克风太近自激；③ 供电不足（5V 输入更稳）</td></tr>
+  <tr><td>HardFault 死机</td><td>① 把大数组放栈上（栈仅 0x400，图片请放 const/Flash）；② DMA 源指针指向已释放的栈地址</td></tr>
+  <tr><td>下载不进程序</td><td>SWD 线序、BOOT0 跳线（下载保持 BOOT0=0 用 SWD，串口 ISP 才要 =1）</td></tr>
+</table>
+
+<!-- ============ 12 ============ -->
+<h2 id="s12"><span class="no">12</span>进阶路线</h2>
+<ul>
+  <li><b>联网版</b>：USART2 + ESP-01S，AT 指令连 WiFi，HTTP 心知天气 API，每 30 分钟更新天气页。</li>
+  <li><b>动画升级</b>：表情帧序列（4~8 帧循环），或者移植 <b>LVGL v8</b>（RAM 需求 ~48KB 超出，需开 <code>LV_MEM_SIZE</code> 最小化 + 局部缓冲 1/10 屏刷新，勉强可行但拥挤——挂件场景不推荐，自制 UI 更轻）。</li>
+  <li><b>低功耗</b>：语音「关屏幕」→ 背光 PWM 渐灭 + STOP 模式，ASRPRO 唤醒中断拉 PA0(WKUP) 唤醒 STM32。</li>
+  <li><b>传感器扩展</b>：I2C 接 SHT30 温湿度，挂件显示室内温湿度；I2C 引脚 PB6/PB7 空闲可用。</li>
+</ul>
+
+<div class="footer">TFT 桌面挂件开发手册 v1.0 · 基于 TFT.ioc（STM32CubeMX 6.17 / FW_F1 V1.8.7）· 祝梦咕咕开发顺利，一次点屏成功喵 ❤</div>
+</main>
+</div>
+</body>
+</html>

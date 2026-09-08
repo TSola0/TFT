@@ -1,0 +1,49 @@
+# ===== IDE / Editor =====
+.vscode/
+.idea/
+*.bak
+
+# ===== STM32CubeMX =====
+.mxproject
+
+# ===== Keil MDK-ARM =====
+MDK-ARM/*.bak
+MDK-ARM/*.dep
+MDK-ARM/*.htm
+MDK-ARM/*.lnp
+MDK-ARM/*.iex
+MDK-ARM/*.uvguix.*
+MDK-ARM/*.scvd
+MDK-ARM/Listings/
+MDK-ARM/Objects/
+MDK-ARM/RTE/
+MDK-ARM/*.dbgconf
+MDK-ARM/build/
+
+# ===== IAR EWARM =====
+EWARM/Debug/
+EWARM/Release/
+EWARM/settings/
+EWARM/*.dep
+EWARM/*.log
+
+# ===== Compiler intermediates =====
+*.o
+*.d
+*.axf
+*.hex
+*.bin
+*.elf
+*.map
+*.lst
+*.crf
+*.lnp
+*.i
+*.lnx
+
+# ===== JLink / ST-Link =====
+JLinkLog.txt
+JLinkSettings.ini
+
+# ===== WorkBuddy 本地助手数据（含个人记忆，不上传）=====
+.workbuddy/
