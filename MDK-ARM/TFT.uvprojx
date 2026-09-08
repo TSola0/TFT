@@ -501,6 +501,11 @@
               <FileType>1</FileType>
               <FilePath>..\Core\Src\printf.c</FilePath>
             </File>
+            <File>
+              <FileName>cmd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Core/Src/cmd.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
