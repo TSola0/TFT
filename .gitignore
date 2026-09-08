@@ -9,7 +9,9 @@
 # ===== Keil MDK-ARM =====
 MDK-ARM/*.bak
 MDK-ARM/*.dep
+MDK-ARM/**/*.dep
 MDK-ARM/*.htm
+MDK-ARM/**/*.htm
 MDK-ARM/*.lnp
 MDK-ARM/*.iex
 MDK-ARM/*.uvguix.*
@@ -19,6 +21,7 @@ MDK-ARM/Objects/
 MDK-ARM/RTE/
 MDK-ARM/*.dbgconf
 MDK-ARM/build/
+MDK-ARM/**/TFT.build_log.htm
 
 # ===== IAR EWARM =====
 EWARM/Debug/

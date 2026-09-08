@@ -20,12 +20,18 @@
 #include "main.h"
 #include "dma.h"
 #include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdio.h"
+#include "string.h"
+#include "math.h"
+#include "lcd.h"
+#include "printf.h"
+#include "w25qxx.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,6 +58,14 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+
+uint8_t buf_tx1[28];
+uint8_t buf_tx2[28];
+uint8_t buf_rx1[28];
+uint8_t buf_rx2[28];
+
+uint8_t spi_tx[128];
+uint8_t spi_rx[128];
 
 /* USER CODE END PFP */
 
@@ -91,10 +105,13 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_SPI1_Init();
+  MX_SPI2_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart1, buf_rx1, sizeof(buf_rx1));
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart2, buf_rx2, sizeof(buf_rx2));
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -148,6 +165,21 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+	
+}
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART1)
+    {
+        HAL_UARTEx_ReceiveToIdle_DMA(&huart1, buf_rx1, sizeof(buf_rx1));
+    }
+    if (huart->Instance == USART2)
+    {
+        HAL_UARTEx_ReceiveToIdle_DMA(&huart2, buf_rx2, sizeof(buf_rx2));
+    }
+}
 
 /* USER CODE END 4 */
 
